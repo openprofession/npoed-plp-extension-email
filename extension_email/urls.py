@@ -5,6 +5,6 @@ from extension_email import views
 
 
 urlpatterns = [
-    url(r'^from_support/?$', views.from_support_view, name='from-support')
+    url(r'^from_support/?$', views.FromSupportView.as_view(), name='from-support')
 ]
 
