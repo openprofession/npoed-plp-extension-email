@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-09-29 18:48+0300\n"
+"POT-Creation-Date: 2016-09-29 19:14+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,6 +44,18 @@ msgid "Рассылка"
 msgstr ""
 
 msgid "Рассылки"
+msgstr ""
+
+msgid "Пользователь"
+msgstr ""
+
+msgid "Когда пользователь отписался от рассылки"
+msgstr ""
+
+msgid "Отписка от рассылок"
+msgstr ""
+
+msgid "Отписки от рассылок"
 msgstr ""
 
 msgid "Массовая рассылка"

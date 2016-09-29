@@ -30,4 +30,14 @@ class SupportEmail(models.Model):
         if self.target == 'myself':
             return [self.sender]
         elif self.target == 'everyone':
-            return User.objects.all()
+            return User.objects.filter(bulk_email_optout__isnull=True)
+
+
+class BulkEmailOptout(models.Model):
+    user = models.ForeignKey(User, verbose_name=_(u'Пользователь'), related_name='bulk_email_optout')
+    created_at = models.DateTimeField(auto_now_add=True,
+                                      verbose_name=_(u'Когда пользователь отписался от рассылки'))
+
+    class Meta:
+        verbose_name = _(u'Отписка от рассылок')
+        verbose_name_plural = _(u'Отписки от рассылок')
