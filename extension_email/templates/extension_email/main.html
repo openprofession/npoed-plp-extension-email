@@ -1,30 +1,99 @@
 {% extends 'base.html' %}
+{% load static from staticfiles %}
 
-{% load widget_filters i18n %}
+{% load widget_filters i18n admin_static %}
 
 {% block title %}{% blocktrans %}Массовая рассылка{% endblocktrans %}{% endblock title %}
 
 {% block section_id %}bulk_email{% endblock section_id %}
 
 {% block content %}
-    <form method="post">
-        {% csrf_token %}
-        <div>{{ form.non_field_errors }}</div>
-        {% for field in form %}
-            <div class="form-group {% if field.errors %} has-error{% endif %}">
-                <div class="col-md-3 col-sm-12">
-                    <label class="control-label">{{ field.label }}</label>
-                </div>
-                <div class=" col-md-9 col-sm-12">{{ field|addclass:'form-control col-md-10 col-sm-12' }}</div>
-                {% if field.errors %}
-                    <div class="help-block col-sm-offset-0 col-md-offset-3 col-md-9 col-sm-12">{{ field.errors }}</div>
-                {% endif %}
+    <div class="modal fade text-left" tabindex="2" role="dialog" id="modalDialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <div class="clearfix">
+              <span id="sendMessage" class="btn btn-success pull-left">{% blocktrans %}Да{% endblocktrans %}</span>
+              <span data-dismiss="modal" class="btn btn-danger pull-right">{% blocktrans %}Нет{% endblocktrans %}</span>
             </div>
-        {% endfor %}
-        <div class="form-group">
-            <div class=" col-md-offset-3 col-md-9">
-                <button name="submit" class="btn btn-success btn-block">{% blocktrans %}Отправить{% endblocktrans %}</button>
-            </div>
+          </div>
         </div>
-    </form>
+      </div>
+    </div>
+    <div class="container">
+        <h1>{% blocktrans %}Массовая рассылка{% endblocktrans %}</h1>
+        {% include 'extension_email/_message_form.html' %}
+        <br>
+    </div>
+{% endblock %}
+
+{% block page_header %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/SelectFilter2.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/SelectBox.js' %}"></script>
+{% endblock %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+    <script type="text/javascript">window.__admin_media_prefix__ = "{% filter escapejs %}{% static "admin/" %}{% endfilter %}";</script>
+    <script type="text/javascript" src="{% static 'admin/js/calendar.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/admin/DateTimeShortcuts.js' %}"></script>
+    <script type="text/javascript">
+        $(document).on('submit', '#massNewsForm', function () {
+            $.ajax({
+                url: $(this).attr('action'),
+                type: $(this).attr('method'),
+                dataType: 'json',
+                data: $(this).serialize() + "&_check_users_count=1",
+                success: function (data) {
+                    if (data['form']) {
+                        $('#massNewsForm').replaceWith(data['form']);
+                        SelectFilter.init("id_session_filter", "Сессия курса", 0, "/static/admin/");
+                        DateTimeShortcuts.init();
+                    }
+                    if (!data['valid']) {
+                        window.scrollTo({top: $('.form-row.errors').first().position().top - $('.global-header').height()});
+                        return;
+                    }
+                    var fmts = ngettext('Вы хотите отправить письмо с темой "%(theme)s" %(user_count)s пользователю. Продолжить?',
+                    'Вы хотите отправить письмо с темой "%(theme)s" %(user_count)s пользователям. Продолжить?', data['user_count']);
+                    var msg = interpolate(fmts, data, true);
+                    $('#modalDialog div.modal-body').html('<p>' + msg + '</p>');
+                    $('#modalDialog').modal('show');
+                },
+                error: function (xhr, err) {
+                    alert("{% blocktrans %}Во время выполнения запроса произошла ошибка{% endblocktrans %}");
+                }
+            });
+            return false;
+        });
+        $(document).on('click', '#sendMessage', function() {
+            SelectBox.select_all('id_session_filter_to');
+            var form = $('#massNewsForm');
+            $.ajax({
+                url: $(form).attr('action'),
+                type: $(form).attr('method'),
+                dataType: 'json',
+                data: $(form).serialize(),
+                success: function (data) {
+                    window.location = data['redirect_url'];
+                },
+                error: function (xhr, err) {
+                    alert("{% blocktrans %}Во время выполнения запроса произошла ошибка{% endblocktrans %}");
+                }
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block styling %}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/widgets.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}"/>
+    {{ block.super }}
 {% endblock %}

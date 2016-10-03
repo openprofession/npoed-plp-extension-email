@@ -2,17 +2,13 @@
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from jsonfield import JSONField
 from plp.models import User
 
 
 class SupportEmail(models.Model):
-    TARGET_CHOICES = (
-        ('myself', _(u'Себе')),
-        ('everyone', _(u'Всем')),
-    )
-
     sender = models.ForeignKey(User, verbose_name=_(u'Отправитель'))
-    target = models.CharField(max_length=15, choices=TARGET_CHOICES, verbose_name=_(u'Фильтр'), default='myself')
+    target = JSONField(blank=True, null=True)
     subject = models.CharField(max_length=128, blank=True, verbose_name=_(u'Тема'))
     html_message = models.TextField(null=True, blank=True, verbose_name=_(u'HTML письма'))
     text_message = models.TextField(null=True, blank=True, verbose_name=_(u'Текст письма'))
@@ -27,10 +23,10 @@ class SupportEmail(models.Model):
         return '%s - %s' % (self.sender, self.subject)
 
     def get_recipients(self):
-        if self.target == 'myself':
-            return [self.sender]
-        elif self.target == 'everyone':
-            return User.objects.filter(bulk_email_optout__isnull=True)
+        from .utils import filter_users
+        if self.target:
+            return filter_users(self.target)
+        return []
 
 
 class BulkEmailOptout(models.Model):

@@ -7,7 +7,7 @@ from .models import SupportEmail, BulkEmailOptout
 
 @admin.register(SupportEmail)
 class SupportEmailAdmin(admin.ModelAdmin):
-    list_display = ('sender', 'subject', 'target', 'created')
+    list_display = ('sender', 'subject', 'created')
     form = modelform_factory(SupportEmail, exclude=[])
 
 

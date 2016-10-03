@@ -1,0 +1,22 @@
+{% load i18n %}
+
+<form method="post" id="massNewsForm">
+    {% csrf_token %}
+    <fieldset class="module aligned">
+        {% for field in form %}
+            {% if field.name == 'session_filter' %}
+                <h2>{% blocktrans %}Фильтры{% endblocktrans %}</h2>
+            {% endif %}
+            <div class="form-row{% if field.errors %} errors{% endif %}">
+                <div>
+                    <label for="{{ field.name }}">{{ field.label }}</label>{{ field }}
+                    {% if field.errors %}{{ field.errors }}{% endif %}
+                    {% if field.help_text %}
+                        <p class="help">{{ field.field.help_text|safe }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </fieldset>
+    <button type="submit" id="submitForm" class="btn btn-default">{% blocktrans %}Отправить{% endblocktrans %}</button>
+</form>

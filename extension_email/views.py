@@ -3,13 +3,15 @@
 import base64
 from django.conf import settings
 from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render
+from django.template.loader import get_template
 from django.views.generic import CreateView
 from plp.models import User
 from .forms import BulkEmailForm
 from .models import BulkEmailOptout
 from .notifications import BulkEmailSend
+from .utils import filter_users
 
 
 class FromSupportView(CreateView):
@@ -25,10 +27,26 @@ class FromSupportView(CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.sender = self.request.user
+        self.object.target = form.to_json()
         self.object.save()
         msgs = BulkEmailSend(self.object)
         msgs.send()
-        return HttpResponseRedirect(self.get_success_url())
+        return JsonResponse({'redirect_url': self.get_success_url()})
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        form_html = get_template('extension_email/_message_form.html').render(context={'form': form}, request=request)
+        if form.is_valid():
+            if '_check_users_count' in request.POST:
+                return JsonResponse({
+                    'user_count': filter_users(form.to_json()).count(),
+                    'theme': form.cleaned_data['subject'],
+                    'form': form_html,
+                    'valid': True,
+                })
+            return self.form_valid(form)
+        else:
+            return JsonResponse({'form': form_html, 'valid': False})
 
 
 def unsubscribe(request, hash_str):
