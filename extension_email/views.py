@@ -3,10 +3,14 @@
 import base64
 from django.conf import settings
 from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponseRedirect, Http404, JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from django.template.loader import get_template
 from django.views.generic import CreateView
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from api.views.user import ApiKeyPermission
 from plp.models import User
 from .forms import BulkEmailForm
 from .models import BulkEmailOptout
@@ -64,3 +68,73 @@ def unsubscribe(request, hash_str):
     }
     return render(request, 'extension_email/unsubscribed.html', context)
 
+
+class OptoutStatusView(APIView):
+    """
+        **Описание**
+
+            Ручка для проверки и изменения статуса подписки пользователя на информационные
+            рассылки платформы. Требуется заголовок X-PLP-Api-Key.
+
+        **Пример запроса**
+
+            GET bulk_email/api/optout_status/?user=<username>
+
+            POST bulk_email/api/optout_status/{
+                "user" : username,
+                 "status" : boolean
+            }
+
+        **Параметры post-запроса**
+
+            * user: логин пользователя
+            * status: True/False для активации/деактивации подписки соответственно
+
+        **Пример ответа**
+
+            * {
+                  "status": True
+              }
+
+            новый статус подписки
+
+            404 если пользователь не найден
+            400 если переданы не все параметры
+
+    """
+    permission_classes = (ApiKeyPermission,)
+
+    def get(self, request, *args, **kwargs):
+        username = request.query_params.get('user')
+        if username:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        optout = BulkEmailOptout.objects.filter(user=user).first()
+        if optout:
+            return Response({'status': False})
+        else:
+            return Response({'status': True})
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('user')
+        new_status = request.data.get('status')
+        if isinstance(new_status, basestring):
+            new_status = new_status.lower() != 'false'
+        if not username or new_status is None:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        old_status = not BulkEmailOptout.objects.filter(user=user).exists()
+        if new_status == old_status:
+            return Response({'status': new_status})
+        if new_status:
+            BulkEmailOptout.objects.filter(user=user).delete()
+        else:
+            BulkEmailOptout.objects.create(user=user)
+        return Response({'status': new_status})
