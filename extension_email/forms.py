@@ -108,6 +108,11 @@ class BulkEmailForm(forms.ModelForm):
             'subject': forms.TextInput(attrs={'style': 'width: 100%'}),
             'text_message': forms.Textarea(attrs={'style': 'width: 100%'}),
         }
+        help_texts = {
+            'text_message': _(u'Можно использовать переменные {{ user.get_full_name }} для подстановки '
+                              u'имени и фамилии пользователя в текст, {{ user.first_name }} - имени, '
+                              u'{{ user.last_name }} - фамилии, {{ user.email }} - email')
+        }
 
     class Media:
         css = {'all': ['admin/css/widgets.css']}

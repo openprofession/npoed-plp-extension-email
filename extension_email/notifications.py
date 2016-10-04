@@ -1,8 +1,8 @@
 # coding: utf-8
 
 import base64
-from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.template import Template, Context
 from django.utils.translation import ugettext_lazy as _
 from plp.notifications.base import MassSendEmails
 
@@ -22,13 +22,23 @@ class BulkEmailSend(MassSendEmails):
         return self.obj.subject
 
     def get_text(self, email=None):
-        return self.add_unsubscribe_footer(email, plaintext_msg=self.obj.text_message)
+        if self.obj.text_message:
+            t = Template(self.obj.text_message)
+            msg = t.render(Context(self.get_context(email)))
+            return self.add_unsubscribe_footer(email, plaintext_msg=msg)
+        return ''
 
     def get_html(self, email=None):
-        return self.add_unsubscribe_footer(email, html_msg=self.obj.html_message)
+        if self.obj.html_message:
+            t = Template(self.obj.html_message)
+            msg = t.render(Context(self.get_context(email)))
+            return self.add_unsubscribe_footer(email, html_msg=msg)
+        return ''
 
     def get_context(self, email=None):
-        return {}
+        return {
+            'user': self.email_to_user[email],
+        }
 
     def get_extra_headers(self, email=None):
         return {'List-Unsubscribe': self.get_unsubscribe_url(email)}
