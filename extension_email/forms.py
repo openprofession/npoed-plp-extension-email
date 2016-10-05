@@ -85,7 +85,7 @@ class BulkEmailForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(BulkEmailForm, self).__init__(*args, **kwargs)
         self.fields['subject'].required = True
-        self.fields['text_message'].required = True
+        self.fields['html_message'].required = True
 
     def to_json(self):
         data = getattr(self, 'cleaned_data', {})
@@ -103,13 +103,13 @@ class BulkEmailForm(forms.ModelForm):
 
     class Meta:
         model = SupportEmail
-        fields = ['subject', 'text_message']
+        fields = ['subject', 'html_message']
         widgets = {
             'subject': forms.TextInput(attrs={'style': 'width: 100%'}),
-            'text_message': forms.Textarea(attrs={'style': 'width: 100%'}),
+            'html_message': forms.Textarea(attrs={'style': 'width: 100%', 'class': 'vLargeTextField'}),
         }
         help_texts = {
-            'text_message': _(u'Можно использовать переменные {{ user.get_full_name }} для подстановки '
+            'html_message': _(u'Можно использовать переменные {{ user.get_full_name }} для подстановки '
                               u'имени и фамилии пользователя в текст, {{ user.first_name }} - имени, '
                               u'{{ user.last_name }} - фамилии, {{ user.email }} - email')
         }
