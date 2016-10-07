@@ -8,5 +8,6 @@ urlpatterns = [
     url(r'^from_support/?$', views.FromSupportView.as_view(), name='from-support'),
     url(r'^unsubscribe/(?P<hash_str>.+)/?', views.unsubscribe, name='bulk-unsubscribe'),
     url(r'^api/optout_status/?$', views.OptoutStatusView.as_view(), name='api-optout-status'),
+    url(r'^support_mail_template/?$', views.support_mail_template, name='support_mail_template'),
 ]
 

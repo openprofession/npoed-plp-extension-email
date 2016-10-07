@@ -16,7 +16,11 @@
                     {% endif %}
                 </div>
             </div>
+            {% if field.name == 'session_filter' %}
+                <h2>{% blocktrans %}Опции для выбора пользователей платформы{% endblocktrans %}</h2>
+            {% endif %}
         {% endfor %}
     </fieldset>
-    <button type="submit" id="submitForm" class="btn btn-default">{% blocktrans %}Отправить{% endblocktrans %}</button>
+    <button type="submit" id="submitForm" class="btn btn-default" data-loading-text="{% blocktrans %}Отправить...{% endblocktrans %}">
+        {% blocktrans %}Отправить{% endblocktrans %}</button>
 </form>

@@ -6,13 +6,20 @@ from plp.models import User, EnrollmentReason, Participant
 from .forms import BulkEmailForm
 
 
-def filter_users(data):
+def filter_users(support_email):
     """
-    Фильтрация пользователей по данным формы массовой рассылки
+    Фильтрация пользователей по данным модели массовой рассылки.
+    Возвращает queryset пользователей и тип фильтра ('to_all', 'to_myself' или '')
     """
+    data = support_email.target
+    if data.get('to_myself'):
+        return User.objects.filter(username=support_email.sender.username), 'to_myself'
     dic = {'bulk_email_optout__isnull': True}
+    dic_exclude = {}
     session_ids = []
+    to_all = True
     if data['session_filter']:
+        to_all = False
         session_ids = data['session_filter']
         dic.update({'participant__session__id__in': session_ids})
     last_login_from = data.get('last_login_from') or BulkEmailForm.MIN_DATE
@@ -20,6 +27,7 @@ def filter_users(data):
     register_date_from = data.get('register_date_from') or BulkEmailForm.MIN_DATE
     register_date_to = data.get('register_date_to') or BulkEmailForm.MAX_DATE
     if last_login_from != BulkEmailForm.MIN_DATE or last_login_to != BulkEmailForm.MAX_DATE:
+        to_all = False
         dic.update({
             'last_login__gte': timezone.datetime.strptime(last_login_from, BulkEmailForm.DATETIME_FORMAT),
             'last_login__lte': timezone.datetime.strptime(last_login_to, BulkEmailForm.DATETIME_FORMAT),
@@ -29,37 +37,47 @@ def filter_users(data):
             'date_joined__gte': timezone.datetime.strptime(register_date_from, BulkEmailForm.DATETIME_FORMAT),
             'date_joined__lte': timezone.datetime.strptime(register_date_to, BulkEmailForm.DATETIME_FORMAT),
         })
-    users = User.objects.filter(**dic)
+
+    # выбран ли конкретный платный/бесплатный вариант прохождения или тип сертификата
+    # для фильтрации по EnrollmentReason
     paid = None
-    if data['enrollment_type'] != BulkEmailForm.ENROLLMENT_TYPE_INITIAL or len(data['got_certificate']) == 1:
-        if 'paid' in data['enrollment_type'] and 'paid' in data['got_certificate']:
+    if data['enrollment_type'] != BulkEmailForm.ENROLLMENT_TYPE_INITIAL:
+        to_all = False
+        if 'paid' in data['enrollment_type']:
             paid = True
-        elif 'free' in data['enrollment_type'] and 'free' in data['got_certificate']:
+        elif 'free' in data['enrollment_type']:
             paid = False
-        else:
-            # если выбор типа записи не соответствует выбору типа сертификата
-            return User.objects.none()
+    elif len(data['got_certificate']) == 1:
+        if 'paid' in data['got_certificate']:
+            paid = True
+        elif 'free' in data['got_certificate']:
+            paid = False
+
     if paid is not None:
-        paid_enr = EnrollmentReason.objects.filter(
+        paid_enr = list(EnrollmentReason.objects.filter(
             participant__session__id__in=session_ids,
-            participant__user__in=users,
             session_enrollment_type__mode='verified'
-        ).values_list('participant__user__id', flat=True)
+        ).values_list('participant__user__id', flat=True).distinct())
         if paid:
-            users = users.filter(id__in=paid_enr)
+            dic.update({'id__in': paid_enr})
         else:
-            users = users.exclude(id__in=paid_enr)
+            dic_exclude.update({'id__in': paid_enr})
     if data['got_certificate']:
-        have_cert = []
-        participants = Participant.objects.filter(
-            session__id__in=session_ids, user__in=users
-        ).values_list('user__id', 'certificate_data')
-        for user_id, cert_data in participants:
-            try:
-                data = json.loads(cert_data)
-            except (ValueError, TypeError):
-                data = {}
-            if data.get('passed', False):
-                have_cert.append(user_id)
-        users = users.filter(id__in=have_cert)
-    return users.distinct()
+        # если не совпадает тип прохождения и платность полученного сертификата
+        if len(data['enrollment_type']) == 1 and len(data['got_certificate']) == 1 and \
+                data['enrollment_type'] != data['got_certificate']:
+            return User.objects.none(), ''
+        to_all = False
+        have_cert = list(Participant.objects.filter(
+            is_graduate=data.get('passed', False),
+            session__id__in=session_ids,
+        ).values_list('user__id', flat=True))
+        if 'id__in' in dic:
+            dic['id__in'] = set(dic['id__in']).intersection(set(have_cert))
+        else:
+            dic['id__in'] = have_cert
+
+    if 'id__in' in dic or 'id__in' in dic_exclude:
+        dic.pop('participant__session__id__in')
+    users = User.objects.filter(**dic).exclude(**dic_exclude).distinct()
+    return users, 'to_all' if to_all else ''

@@ -7,6 +7,9 @@ from plp.models import User
 
 
 class SupportEmail(models.Model):
+    """
+    Модель для сохранения информации и настроек массовой рассылки
+    """
     sender = models.ForeignKey(User, verbose_name=_(u'Отправитель'))
     target = JSONField(blank=True, null=True)
     subject = models.CharField(max_length=128, blank=True, verbose_name=_(u'Тема'))
@@ -25,7 +28,7 @@ class SupportEmail(models.Model):
     def get_recipients(self):
         from .utils import filter_users
         if self.target:
-            return filter_users(self.target)
+            return filter_users(self)[0]
         return []
 
 
@@ -37,3 +40,17 @@ class BulkEmailOptout(models.Model):
     class Meta:
         verbose_name = _(u'Отписка от рассылок')
         verbose_name_plural = _(u'Отписки от рассылок')
+
+
+class SupportEmailTemplate(models.Model):
+    slug = models.CharField(max_length=128, verbose_name=_(u'Название шаблона'), unique=True)
+    subject = models.CharField(max_length=128, verbose_name=_(u'Тема'))
+    html_message = models.TextField(verbose_name=_(u'HTML письма'))
+    text_message = models.TextField(null=True, blank=True, verbose_name=_(u'Текст письма'))
+
+    def __unicode__(self):
+        return self.slug
+
+    class Meta:
+        verbose_name = _(u'Шаблон рассылки')
+        verbose_name_plural = _(u'Шаблоны рассылок')

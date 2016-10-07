@@ -8,6 +8,11 @@ from plp.notifications.base import MassSendEmails
 
 
 class BulkEmailSend(MassSendEmails):
+    """
+    Расширение класса MassSendEmails для работы с объектами SupportEmail
+    (тексты и заголовки писем берутся из них, а не из шаблонов),
+    а также добавления футера с отпиской от рассылок
+    """
     def __init__(self, obj):
         self.obj = obj
         self.email_to_user = {}

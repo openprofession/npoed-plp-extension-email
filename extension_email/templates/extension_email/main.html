@@ -35,7 +35,6 @@
     <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
     <script type="text/javascript" src="{% static 'admin/js/SelectFilter2.js' %}"></script>
     <script type="text/javascript" src="{% static 'admin/js/SelectBox.js' %}"></script>
-{#    <script type="text/javascript" src="{% static 'js/redactor/redactor/redactor.js' %}"></script>#}
 {% endblock %}
 
 {% block javascript %}
@@ -47,6 +46,8 @@
     <script type="text/javascript" src="{% static 'js/redactor/redactor/redactor.js' %}"></script>
     <script type="text/javascript">
         $(document).on('submit', '#massNewsForm', function () {
+            $('#id_subject').removeAttr('disabled');
+            $('#submitForm').button('loading');
             $.ajax({
                 url: $(this).attr('action'),
                 type: $(this).attr('method'),
@@ -58,25 +59,30 @@
                         SelectFilter.init("id_session_filter", "Сессия курса", 0, "/static/admin/");
                         DateTimeShortcuts.init();
                         init_redactor();
+                        template_selected_handler($('#id_chosen_template').val());
                     }
                     if (!data['valid']) {
                         window.scrollTo({top: $('.form-row.errors').first().position().top - $('.global-header').height()});
                         return;
                     }
-                    var fmts = ngettext('Вы хотите отправить письмо с темой "%(theme)s" %(user_count)s пользователю. Продолжить?',
-                    'Вы хотите отправить письмо с темой "%(theme)s" %(user_count)s пользователям. Продолжить?', data['user_count']);
-                    var msg = interpolate(fmts, data, true);
+                    var msg = data['message'];
                     $('#modalDialog div.modal-body').html('<p>' + msg + '</p>');
                     $('#modalDialog').modal('show');
                 },
                 error: function (xhr, err) {
                     alert("{% blocktrans %}Во время выполнения запроса произошла ошибка{% endblocktrans %}");
+                },
+                complete: function(xhr, status) {
+                    $('#submitForm').button('reset');
                 }
             });
             return false;
         });
         $(document).on('click', '#sendMessage', function() {
             SelectBox.select_all('id_session_filter_to');
+            var disabled = $('#id_subject').attr('disabled');
+            if (disabled)
+                $('#id_subject').removeAttr('disabled');
             var form = $('#massNewsForm');
             $.ajax({
                 url: $(form).attr('action'),
@@ -84,13 +90,49 @@
                 dataType: 'json',
                 data: $(form).serialize(),
                 success: function (data) {
-                    window.location = data['redirect_url'];
+                    $('#modalDialog').modal('hide');
+                    alert("{% blocktrans %}Сообщения успешно отправлены{% endblocktrans %}");
                 },
                 error: function (xhr, err) {
                     alert("{% blocktrans %}Во время выполнения запроса произошла ошибка{% endblocktrans %}");
+                },
+                complete: function(xhr, status) {
+                    if (disabled) {
+                        $('#id_subject').attr('disabled', 'disabled');
+                    }
                 }
             });
         });
+        $(document).on('change', '#id_chosen_template', function(e) {
+            var val = $(e.target).val();
+            if (val) {
+                $.post("{% url 'support_mail_template' %}", {id: val}, function(data) {
+                    $('#id_subject').val(data['subject']);
+                    $('.vLargeTextField').redactor('code.set', data['html_message']);
+                    template_selected_handler(true);
+                });
+            }
+            else {
+                $('#id_subject').val('');
+                $('.vLargeTextField').redactor('code.set', '');
+                template_selected_handler(false);
+            }
+        });
+        $(document).on("keydown", function (e) {
+            if (e.which === 8 && !$(e.target).is("input, textarea, .redactor-editor")) {
+                e.preventDefault();
+            }
+        });
+        function template_selected_handler(selected) {
+            if (selected) {
+                $('#id_subject').attr('disabled', 'disabled');
+                $('.redactor-editor').attr('contenteditable', 'false');
+            }
+            else {
+                $('#id_subject').removeAttr('disabled');
+                $('.redactor-editor').attr('contenteditable', 'true');
+            }
+        }
         function init_redactor() {
             $('.vLargeTextField').redactor({
                 minHeight: 300
