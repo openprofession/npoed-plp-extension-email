@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% blocktrans %}Отписка от рассылок{% endblocktrans %}{% endblock title %}
+
+{% block section_id %}{% endblock section_id %}
+
+{% block content %}
+    <div class="issue">
+        <h1>Отписка от рассылок</h1>
+        {% url 'my' as courses_url %}
+        <p>
+        {% blocktrans trimmed %}
+        Вы больше не будете получать информационные рассылки команды платформы {{ PLATFORM_NAME }}.
+        Снова подписаться на рассылки вы можете на странице <a href="{{ profile_url }}">мой профиль</a>.
+        {% endblocktrans %}
+        </p>
+        <p>
+        {% blocktrans trimmed %}
+        Обращаем ваше внимание, что настройки подписки на информационные сообщения авторов курсов,
+        слушателями которых вы являетесь, остались прежними.
+        Управлять рассылками от авторов курсов вы можете на странице <a href="{{ courses_url }}">мои курсы</a>.
+        {% endblocktrans %}
+        </p>
+    </div>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static from staticfiles %}
+
+{% load widget_filters i18n admin_static %}
+
+{% block title %}{% blocktrans %}Массовая рассылка{% endblocktrans %}{% endblock title %}
+
+{% block section_id %}bulk_email{% endblock section_id %}
+
+{% block content %}
+    <div class="modal fade text-left" tabindex="2" role="dialog" id="modalDialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <div class="clearfix">
+              <span id="sendMessage" class="btn btn-success pull-left">{% blocktrans %}Да{% endblocktrans %}</span>
+              <span data-dismiss="modal" class="btn btn-danger pull-right">{% blocktrans %}Нет{% endblocktrans %}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+        <h1>{% blocktrans %}Массовая рассылка{% endblocktrans %}</h1>
+        {% include 'extension_email/_message_form.html' %}
+        <br>
+    </div>
+{% endblock %}
+
+{% block page_header %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/SelectFilter2.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/SelectBox.js' %}"></script>
+{% endblock %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+    <script type="text/javascript">window.__admin_media_prefix__ = "{% filter escapejs %}{% static "admin/" %}{% endfilter %}";</script>
+    <script type="text/javascript" src="{% static 'admin/js/calendar.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/admin/DateTimeShortcuts.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/redactor/redactor/redactor.js' %}"></script>
+    <script type="text/javascript">
+        $(document).on('submit', '#massNewsForm', function () {
+            $('#id_subject').removeAttr('disabled');
+            $('#submitForm').button('loading');
+            $.ajax({
+                url: $(this).attr('action'),
+                type: $(this).attr('method'),
+                dataType: 'json',
+                data: $(this).serialize() + "&_check_users_count=1",
+                success: function (data) {
+                    if (data['form']) {
+                        $('#massNewsForm').replaceWith(data['form']);
+                        SelectFilter.init("id_session_filter", "Сессия курса", 0, "/static/admin/");
+                        DateTimeShortcuts.init();
+                        init_redactor();
+                        template_selected_handler($('#id_chosen_template').val());
+                    }
+                    if (!data['valid']) {
+                        window.scrollTo({top: $('.form-row.errors').first().position().top - $('.global-header').height()});
+                        return;
+                    }
+                    var msg = data['message'];
+                    $('#modalDialog div.modal-body').html('<p>' + msg + '</p>');
+                    $('#modalDialog').modal('show');
+                },
+                error: function (xhr, err) {
+                    alert("{% blocktrans %}Во время выполнения запроса произошла ошибка{% endblocktrans %}");
+                },
+                complete: function(xhr, status) {
+                    $('#submitForm').button('reset');
+                }
+            });
+            return false;
+        });
+        $(document).on('click', '#sendMessage', function() {
+            SelectBox.select_all('id_session_filter_to');
+            var disabled = $('#id_subject').attr('disabled');
+            if (disabled)
+                $('#id_subject').removeAttr('disabled');
+            var form = $('#massNewsForm');
+            $.ajax({
+                url: $(form).attr('action'),
+                type: $(form).attr('method'),
+                dataType: 'json',
+                data: $(form).serialize(),
+                success: function (data) {
+                    $('#modalDialog').modal('hide');
+                    alert("{% blocktrans %}Сообщения успешно отправлены{% endblocktrans %}");
+                },
+                error: function (xhr, err) {
+                    alert("{% blocktrans %}Во время выполнения запроса произошла ошибка{% endblocktrans %}");
+                },
+                complete: function(xhr, status) {
+                    if (disabled) {
+                        $('#id_subject').attr('disabled', 'disabled');
+                    }
+                }
+            });
+        });
+        $(document).on('change', '#id_chosen_template', function(e) {
+            var val = $(e.target).val();
+            if (val) {
+                $.post("{% url 'support_mail_template' %}", {id: val}, function(data) {
+                    $('#id_subject').val(data['subject']);
+                    $('.vLargeTextField').redactor('code.set', data['html_message']);
+                    template_selected_handler(true);
+                });
+            }
+            else {
+                $('#id_subject').val('');
+                $('.vLargeTextField').redactor('code.set', '');
+                template_selected_handler(false);
+            }
+        });
+        $(document).on("keydown", function (e) {
+            if (e.which === 8 && !$(e.target).is("input, textarea, .redactor-editor")) {
+                e.preventDefault();
+            }
+        });
+        function template_selected_handler(selected) {
+            if (selected) {
+                $('#id_subject').attr('disabled', 'disabled');
+                $('.redactor-editor').attr('contenteditable', 'false');
+            }
+            else {
+                $('#id_subject').removeAttr('disabled');
+                $('.redactor-editor').attr('contenteditable', 'true');
+            }
+        }
+        function init_redactor() {
+            $('.vLargeTextField').redactor({
+                minHeight: 300
+            });
+            var boxes = $('.redactor-box');
+            for (var i = 0; i < boxes.length; ++i) {
+                $(boxes[i]).parent()[0].getElementsByTagName('label')[0].style.float = "none";
+                $(boxes[i]).parent()[0].getElementsByTagName('label')[0].style.display = "inline";
+            }
+        }
+        init_redactor();
+    </script>
+{% endblock %}
+
+{% block styling %}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/widgets.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}"/>
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "js/redactor/redactor/redactor.css" %}" />
+{% endblock %}
