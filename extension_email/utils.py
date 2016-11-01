@@ -79,6 +79,7 @@ def filter_users(support_email):
             dic['id__in'] = have_cert
 
     if 'id__in' in dic or 'id__in' in dic_exclude:
-        dic.pop('participant__session__id__in')
+        if 'participant__session__id__in' in dic:
+            dic.pop('participant__session__id__in')
     users = User.objects.filter(**dic).exclude(**dic_exclude).distinct()
     return users, 'to_all' if to_all else ''
