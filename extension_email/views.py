@@ -28,7 +28,7 @@ class FromSupportView(CreateView):
     template_name = 'extension_email/main.html'
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.is_superuser:
+        if request.user.is_staff:
             return super(FromSupportView, self).dispatch(request, *args, **kwargs)
         raise Http404
 
