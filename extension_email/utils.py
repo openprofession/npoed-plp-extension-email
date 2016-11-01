@@ -33,6 +33,7 @@ def filter_users(support_email):
             'last_login__lte': timezone.datetime.strptime(last_login_to, BulkEmailForm.DATETIME_FORMAT),
         })
     if register_date_from != BulkEmailForm.MIN_DATE or register_date_to != BulkEmailForm.MAX_DATE:
+        to_all = False
         dic.update({
             'date_joined__gte': timezone.datetime.strptime(register_date_from, BulkEmailForm.DATETIME_FORMAT),
             'date_joined__lte': timezone.datetime.strptime(register_date_to, BulkEmailForm.DATETIME_FORMAT),
