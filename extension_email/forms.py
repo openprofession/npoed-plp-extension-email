@@ -72,7 +72,8 @@ class BulkEmailForm(forms.ModelForm):
         required=False,
         label=_(u'Сессия курса')
     )
-    to_myself = forms.Field(widget=forms.CheckboxInput, label=_(u'Отправить только себе'), required=False)
+    to_myself = forms.Field(widget=forms.CheckboxInput, label=_(u'Отправить только себе'), required=False,
+                           help_text=_(u'Вы получите письмо при отправке только себе даже если вы отписаны от рассылки'))
     last_login_from = forms.DateField(label=_(u'Дата последнего входа от'), widget=AdminDateWidget(),
                                       input_formats=[DATETIME_FORMAT], initial=MIN_DATE)
     last_login_to = forms.DateField(label=_(u'Дата последнего входа до'), widget=AdminDateWidget(),
