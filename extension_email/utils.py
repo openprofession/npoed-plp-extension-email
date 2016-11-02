@@ -3,7 +3,7 @@
 import json
 from django.utils import timezone
 from plp.models import User, EnrollmentReason, Participant
-from .forms import BulkEmailForm
+from .forms import BulkEmailForm, CustomUnicodeCourseSession
 
 
 def filter_users(support_email):
@@ -11,6 +11,12 @@ def filter_users(support_email):
     Фильтрация пользователей по данным модели массовой рассылки.
     Возвращает queryset пользователей и тип фильтра ('to_all', 'to_myself' или '')
     """
+    def _check_enrollment_type_chosen():
+        return data['enrollment_type'] != BulkEmailForm.ENROLLMENT_TYPE_INITIAL
+
+    def _check_get_certificate_chosen():
+        return len(data['got_certificate'])
+
     data = support_email.target
     if data.get('to_myself'):
         return User.objects.filter(username=support_email.sender.username), 'to_myself'
@@ -18,6 +24,9 @@ def filter_users(support_email):
     dic_exclude = {}
     session_ids = []
     to_all = True
+    # если фильтр по сессиям будет нужен, но пользователь не выбрал ни одной сессии
+    if not data['session_filter'] and (_check_enrollment_type_chosen() or _check_get_certificate_chosen()):
+        data['session_filter'] = CustomUnicodeCourseSession.get_ordered_queryset()
     if data['session_filter']:
         to_all = False
         session_ids = data['session_filter']
@@ -42,7 +51,7 @@ def filter_users(support_email):
     # выбран ли конкретный платный/бесплатный вариант прохождения или тип сертификата
     # для фильтрации по EnrollmentReason
     paid = None
-    if data['enrollment_type'] != BulkEmailForm.ENROLLMENT_TYPE_INITIAL:
+    if _check_enrollment_type_chosen():
         to_all = False
         if 'paid' in data['enrollment_type']:
             paid = True
@@ -78,8 +87,7 @@ def filter_users(support_email):
         else:
             dic['id__in'] = have_cert
 
-    if 'id__in' in dic or 'id__in' in dic_exclude:
-        if 'participant__session__id__in' in dic:
-            dic.pop('participant__session__id__in')
+    if 'id__in' in dic:
+        dic.pop('participant__session__id__in', None)
     users = User.objects.filter(**dic).exclude(**dic_exclude).distinct()
     return users, 'to_all' if to_all else ''
