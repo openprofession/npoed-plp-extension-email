@@ -57,6 +57,7 @@
                     if (data['form']) {
                         $('#massNewsForm').replaceWith(data['form']);
                         SelectFilter.init("id_session_filter", "Сессия курса", 0, "/static/admin/");
+                        SelectFilter.init("id_course_filter", "Курсы", 0, "/static/admin/");
                         DateTimeShortcuts.init();
                         init_redactor();
                         template_selected_handler($('#id_chosen_template').val());
@@ -142,6 +143,7 @@
                 $(boxes[i]).parent()[0].getElementsByTagName('label')[0].style.float = "none";
                 $(boxes[i]).parent()[0].getElementsByTagName('label')[0].style.display = "inline";
             }
+
         }
         init_redactor();
     </script>
@@ -153,4 +155,14 @@
     <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}"/>
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static "js/redactor/redactor/redactor.css" %}" />
+    <style>
+    div.form-row {
+        position: relative;
+        padding-bottom: 20px;
+    }
+    p.help {
+        position: absolute;
+        bottom: 0;
+    }
+    </style>
 {% endblock %}

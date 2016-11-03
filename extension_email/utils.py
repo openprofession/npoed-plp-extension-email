@@ -1,8 +1,8 @@
 # coding: utf-8
 
-import json
+from django.db.models import Q
 from django.utils import timezone
-from plp.models import User, EnrollmentReason, Participant
+from plp.models import User, EnrollmentReason, Participant, Subscription
 from .forms import BulkEmailForm, CustomUnicodeCourseSession
 
 
@@ -31,6 +31,12 @@ def filter_users(support_email):
         to_all = False
         session_ids = data['session_filter']
         dic.update({'participant__session__id__in': session_ids})
+    subscription_ids = []
+    if data['course_filter']:
+        to_all = False
+        subscription_ids = Subscription.objects.filter(course__in=data['course_filter'], active=True).\
+            values_list('user__id', flat=True)
+
     last_login_from = data.get('last_login_from') or BulkEmailForm.MIN_DATE
     last_login_to = data.get('last_login_to') or BulkEmailForm.MAX_DATE
     register_date_from = data.get('register_date_from') or BulkEmailForm.MIN_DATE
@@ -89,6 +95,16 @@ def filter_users(support_email):
 
     if 'id__in' in dic:
         dic.pop('participant__session__id__in', None)
+    if subscription_ids:
+        dic2 = dic.copy()
+        dic2.pop('participant__session__id__in', None)
+        dic2['id__in'] = subscription_ids
+        if 'id__in' in dic or 'participant__session__id__in' in dic:
+            users = User.objects.filter(Q(**dic) | Q(**dic2))
+        else:
+            users = User.objects.filter(**dic2)
+    else:
+        users = User.objects.filter(**dic)
     # т.к. все пользователи в plp пушатся активными, проверяем реальную активность в sso так
-    users = User.objects.filter(**dic).exclude(**dic_exclude).exclude(last_name='').distinct()
+    users = users.exclude(**dic_exclude).exclude(last_name='').distinct()
     return users, 'to_all' if to_all else ''
