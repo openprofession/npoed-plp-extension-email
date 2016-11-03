@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-07 14:26+0300\n"
+"POT-Creation-Date: 2016-11-03 17:59+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -31,7 +31,29 @@ msgstr ""
 msgid "Сессия курса"
 msgstr ""
 
+msgid "Курсы"
+msgstr ""
+
+msgid "Курс"
+msgstr ""
+
+msgid "Отправить письмо подписанным на новости курсов"
+msgstr ""
+
+msgid "Вузы"
+msgstr ""
+
+msgid "Вуз"
+msgstr ""
+
+msgid "Отправить письмо подписанным на новости курсов этих вузов"
+msgstr ""
+
 msgid "Отправить только себе"
+msgstr ""
+
+msgid ""
+"Вы получите письмо при отправке только себе даже если вы отписаны от рассылки"
 msgstr ""
 
 msgid "Дата последнего входа от"
@@ -72,6 +94,13 @@ msgid ""
 msgstr ""
 
 msgid "Некорректный HTML текст письма"
+msgstr ""
+
+msgid "Невозможно отправить рассылку - проверьте корректность дат регистрации"
+msgstr ""
+
+msgid ""
+"Невозможно отправить рассылку - проверьте корректность дат последнего входа"
 msgstr ""
 
 msgid ""

@@ -58,6 +58,7 @@
                         $('#massNewsForm').replaceWith(data['form']);
                         SelectFilter.init("id_session_filter", "Сессия курса", 0, "/static/admin/");
                         SelectFilter.init("id_course_filter", "Курсы", 0, "/static/admin/");
+                        SelectFilter.init("id_university_filter", "Вузы", 0, "/static/admin/");
                         DateTimeShortcuts.init();
                         init_redactor();
                         template_selected_handler($('#id_chosen_template').val());

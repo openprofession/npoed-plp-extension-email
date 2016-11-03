@@ -2,7 +2,7 @@
 
 from django.db.models import Q
 from django.utils import timezone
-from plp.models import User, EnrollmentReason, Participant, Subscription
+from plp.models import User, EnrollmentReason, Participant, Subscription, Course
 from .forms import BulkEmailForm, CustomUnicodeCourseSession
 
 
@@ -32,9 +32,11 @@ def filter_users(support_email):
         session_ids = data['session_filter']
         dic.update({'participant__session__id__in': session_ids})
     subscription_ids = []
-    if data['course_filter']:
+    if data['course_filter'] or data['university_filter']:
         to_all = False
-        subscription_ids = Subscription.objects.filter(course__in=data['course_filter'], active=True).\
+        ids = list(data['course_filter']) + \
+              list(Course.objects.filter(university__id__in=data['university_filter']).values_list('id', flat=True))
+        subscription_ids = Subscription.objects.filter(course__id__in=ids, active=True).\
             values_list('user__id', flat=True)
 
     last_login_from = data.get('last_login_from') or BulkEmailForm.MIN_DATE
@@ -96,6 +98,7 @@ def filter_users(support_email):
     if 'id__in' in dic:
         dic.pop('participant__session__id__in', None)
     if subscription_ids:
+        # условия фильтрации пользователей по записям ИЛИ подписке на новости
         dic2 = dic.copy()
         dic2.pop('participant__session__id__in', None)
         dic2['id__in'] = subscription_ids
