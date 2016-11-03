@@ -21,8 +21,7 @@ def filter_users(support_email):
     if data.get('to_myself'):
         return User.objects.filter(username=support_email.sender.username), 'to_myself'
     dic = {'bulk_email_optout__isnull': True}
-    # т.к. все пользователи в plp пушатся активными, проверяем реальную активность в sso так
-    dic_exclude = {'last_name': ''}
+    dic_exclude = {}
     session_ids = []
     to_all = True
     # если фильтр по сессиям будет нужен, но пользователь не выбрал ни одной сессии
@@ -90,5 +89,6 @@ def filter_users(support_email):
 
     if 'id__in' in dic:
         dic.pop('participant__session__id__in', None)
-    users = User.objects.filter(**dic).exclude(**dic_exclude).distinct()
+    # т.к. все пользователи в plp пушатся активными, проверяем реальную активность в sso так
+    users = User.objects.filter(**dic).exclude(**dic_exclude).exclude(last_name='').distinct()
     return users, 'to_all' if to_all else ''
