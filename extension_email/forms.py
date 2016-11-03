@@ -133,6 +133,21 @@ class BulkEmailForm(forms.ModelForm):
                 raise forms.ValidationError(_(u'Некорректный HTML текст письма'))
         return html
 
+    def clean(self):
+        data = super(BulkEmailForm, self).clean()
+        last_login_from = data.get('last_login_from')
+        last_login_to = data.get('last_login_to')
+        register_date_from = data.get('register_date_from')
+        register_date_to = data.get('register_date_to')
+        errors = []
+        if last_login_from and last_login_to and last_login_from > last_login_to:
+            errors.append(_(u'Невозможно отправить рассылку - проверьте корректность дат регистрации'))
+        if register_date_from and register_date_to and register_date_from > register_date_to:
+            errors.append(_(u'Невозможно отправить рассылку - проверьте корректность дат последнего входа'))
+        if errors:
+            self._update_errors(forms.ValidationError({'__all__': errors}))
+        return data
+
     class Meta:
         model = SupportEmail
         fields = ['subject', 'html_message']
