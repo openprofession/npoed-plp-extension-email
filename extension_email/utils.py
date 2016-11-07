@@ -31,7 +31,7 @@ def filter_users(support_email):
         to_all = False
         session_ids = data['session_filter']
         dic.update({'participant__session__id__in': session_ids})
-    subscription_ids = []
+    subscription_ids = None
     if data['course_filter'] or data['university_filter']:
         to_all = False
         ids = list(data['course_filter']) + \
@@ -97,7 +97,7 @@ def filter_users(support_email):
 
     if 'id__in' in dic:
         dic.pop('participant__session__id__in', None)
-    if subscription_ids:
+    if subscription_ids is not None:
         # условия фильтрации пользователей по записям ИЛИ подписке на новости
         dic2 = dic.copy()
         dic2.pop('participant__session__id__in', None)
