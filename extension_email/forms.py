@@ -8,7 +8,7 @@ from django.contrib.admin.widgets import FilteredSelectMultiple, AdminDateWidget
 from django.template import Template, Context
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from plp.models import CourseSession
+from plp.models import CourseSession, Course, University
 from .models import SupportEmail, SupportEmailTemplate
 
 
@@ -71,6 +71,24 @@ class BulkEmailForm(forms.ModelForm):
                                       attrs={'style': 'min-height: 180px'}),
         required=False,
         label=_(u'Сессия курса')
+    )
+    course_filter = forms.ModelMultipleChoiceField(
+        queryset=Course.objects.all(),
+        widget=FilteredSelectMultiple(verbose_name=_(u'Курсы'),
+                                      is_stacked=False,
+                                      attrs={'style': 'min-height: 180px'}),
+        required=False,
+        label=_(u'Курс'),
+        help_text=_(u'Отправить письмо подписанным на новости курсов')
+    )
+    university_filter = forms.ModelMultipleChoiceField(
+        queryset=University.objects.all(),
+        widget=FilteredSelectMultiple(verbose_name=_(u'Вузы'),
+                                      is_stacked=False,
+                                      attrs={'style': 'min-height: 180px'}),
+        required=False,
+        label=_(u'Вуз'),
+        help_text=_(u'Отправить письмо подписанным на новости курсов этих вузов')
     )
     to_myself = forms.Field(widget=forms.CheckboxInput, label=_(u'Отправить только себе'), required=False,
                            help_text=_(u'Вы получите письмо при отправке только себе даже если вы отписаны от рассылки'))
