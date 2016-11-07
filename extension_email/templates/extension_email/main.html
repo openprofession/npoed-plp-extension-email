@@ -82,6 +82,8 @@
         });
         $(document).on('click', '#sendMessage', function() {
             SelectBox.select_all('id_session_filter_to');
+            SelectBox.select_all('id_course_filter_to');
+            SelectBox.select_all('id_university_filter_to');
             var disabled = $('#id_subject').attr('disabled');
             if (disabled)
                 $('#id_subject').removeAttr('disabled');
