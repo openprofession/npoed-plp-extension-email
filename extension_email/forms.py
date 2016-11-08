@@ -88,7 +88,7 @@ class BulkEmailForm(forms.ModelForm):
                                       attrs={'style': 'min-height: 180px'}),
         required=False,
         label=_(u'Вуз'),
-        help_text=_(u'Отправить письмо подписанным на новости курсов этих вузов')
+        help_text=_(u'Отправить письмо подписанным на новости курсов и записанным на курсы этих вузов')
     )
     to_myself = forms.Field(widget=forms.CheckboxInput, label=_(u'Отправить только себе'), required=False,
                            help_text=_(u'Вы получите письмо при отправке только себе даже если вы отписаны от рассылки'))

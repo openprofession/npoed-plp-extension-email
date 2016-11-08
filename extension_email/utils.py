@@ -2,7 +2,7 @@
 
 from django.db.models import Q
 from django.utils import timezone
-from plp.models import User, EnrollmentReason, Participant, Subscription, Course
+from plp.models import User, EnrollmentReason, Participant, Subscription, Course, CourseSession
 from .forms import BulkEmailForm, CustomUnicodeCourseSession
 
 
@@ -38,6 +38,12 @@ def filter_users(support_email):
               list(Course.objects.filter(university__id__in=data['university_filter']).values_list('id', flat=True))
         subscription_ids = Subscription.objects.filter(course__id__in=ids, active=True).\
             values_list('user__id', flat=True)
+        if data['university_filter']:
+            session_ids.extend(list(CourseSession.objects.filter(
+                course__university__id__in=data['university_filter']
+            ).values_list('id', flat=True)))
+            session_ids = list(set(session_ids))
+            dic.update({'participant__session__id__in': session_ids})
 
     last_login_from = data.get('last_login_from') or BulkEmailForm.MIN_DATE
     last_login_to = data.get('last_login_to') or BulkEmailForm.MAX_DATE
