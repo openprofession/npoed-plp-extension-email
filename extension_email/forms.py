@@ -79,7 +79,7 @@ class BulkEmailForm(forms.ModelForm):
                                       attrs={'style': 'min-height: 180px'}),
         required=False,
         label=_(u'Курс'),
-        help_text=_(u'Отправить письмо подписанным на новости курсов')
+        help_text=_(u'Отправить письмо подписанным на новости курсов или записанным на них')
     )
     university_filter = forms.ModelMultipleChoiceField(
         queryset=University.objects.all(),
