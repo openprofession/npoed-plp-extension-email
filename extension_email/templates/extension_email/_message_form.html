@@ -15,7 +15,7 @@
                     <label for="{{ field.name }}">{{ field.label }}</label>{{ field }}
                     {% if field.errors %}{{ field.errors }}{% endif %}
                     {% if field.help_text %}
-                        <p class="help">{{ field.field.help_text|safe }}</p>
+                        <br><br><p class="help">{{ field.field.help_text|safe }}</p>
                     {% endif %}
                 </div>
             </div>
