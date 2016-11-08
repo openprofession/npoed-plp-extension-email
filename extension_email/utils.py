@@ -25,8 +25,9 @@ def filter_users(support_email):
     session_ids = []
     to_all = True
     # если фильтр по сессиям будет нужен, но пользователь не выбрал ни одной сессии
-    if not data['session_filter'] and (_check_enrollment_type_chosen() or _check_get_certificate_chosen()):
-        data['session_filter'] = CustomUnicodeCourseSession.get_ordered_queryset()
+    if not data['session_filter'] and not data['course_filter'] and not data['university_filter'] \
+            and (_check_enrollment_type_chosen() or _check_get_certificate_chosen()):
+        data['session_filter'] = list(CourseSession.objects.values_list('id', flat=True))
     if data['session_filter']:
         to_all = False
         session_ids = data['session_filter']
@@ -36,14 +37,14 @@ def filter_users(support_email):
         to_all = False
         ids = list(data['course_filter']) + \
               list(Course.objects.filter(university__id__in=data['university_filter']).values_list('id', flat=True))
-        subscription_ids = Subscription.objects.filter(course__id__in=ids, active=True).\
-            values_list('user__id', flat=True)
-        if data['university_filter']:
-            session_ids.extend(list(CourseSession.objects.filter(
-                course__university__id__in=data['university_filter']
-            ).values_list('id', flat=True)))
-            session_ids = list(set(session_ids))
-            dic.update({'participant__session__id__in': session_ids})
+        # не делаем рассылку по подписчикам, если указаны платники/бесплатники/сертификаты
+        if not (_check_enrollment_type_chosen() or _check_get_certificate_chosen()):
+            subscription_ids = Subscription.objects.filter(course__id__in=ids, active=True).\
+                values_list('user__id', flat=True)
+        ids = list(CourseSession.objects.filter(course__id__in=ids).values_list('id', flat=True))
+        session_ids.extend(ids)
+        session_ids = list(set(session_ids))
+        dic.update({'participant__session__id__in': session_ids})
 
     last_login_from = data.get('last_login_from') or BulkEmailForm.MIN_DATE
     last_login_to = data.get('last_login_to') or BulkEmailForm.MAX_DATE
