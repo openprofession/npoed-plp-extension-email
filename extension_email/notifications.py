@@ -4,7 +4,7 @@ import base64
 from django.core.urlresolvers import reverse
 from django.template import Template, Context
 from django.utils.translation import ugettext_lazy as _
-from plp.notifications.base import MassSendEmails
+from npoed_massmail.base import MassSendEmails
 
 
 class BulkEmailSend(MassSendEmails):
