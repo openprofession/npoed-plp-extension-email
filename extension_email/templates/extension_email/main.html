@@ -43,9 +43,12 @@
     <script type="text/javascript">window.__admin_media_prefix__ = "{% filter escapejs %}{% static "admin/" %}{% endfilter %}";</script>
     <script type="text/javascript" src="{% static 'admin/js/calendar.js' %}"></script>
     <script type="text/javascript" src="{% static 'admin/js/admin/DateTimeShortcuts.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/redactor/redactor/redactor.js' %}"></script>
+    <script type="text/javascript" src="{% static "tiny_mce/tiny_mce.js" %}"></script>
     <script type="text/javascript">
-        $(document).on('submit', '#massNewsForm', function () {
+        $ = jQuery.noConflict();
+        $(document).on('submit', '#massNewsForm', function (e) {
+            e.preventDefault();
+            AddRemoveTinyMce('id_html_message');
             $('#id_subject').removeAttr('disabled');
             $('#submitForm').button('loading');
             $.ajax({
@@ -60,11 +63,9 @@
                         SelectFilter.init("id_course_filter", "Курсы", 0, "/static/admin/");
                         SelectFilter.init("id_university_filter", "Вузы", 0, "/static/admin/");
                         DateTimeShortcuts.init();
-                        init_redactor();
-                        template_selected_handler($('#id_chosen_template').val());
                     }
                     if (!data['valid']) {
-                        window.scrollTo({top: $('.form-row.errors').first().position().top - $('.global-header').height()});
+                        $('body').animate({scrollTop: $('.form-row.errors').first().position().top - $('.global-header').height()});
                         return;
                     }
                     var msg = data['message'];
@@ -76,6 +77,8 @@
                 },
                 complete: function(xhr, status) {
                     $('#submitForm').button('reset');
+                    AddRemoveTinyMce('id_html_message');
+                    template_selected_handler($('#id_chosen_template').val());
                 }
             });
             return false;
@@ -112,14 +115,14 @@
             if (val) {
                 $.post("{% url 'support_mail_template' %}", {id: val}, function(data) {
                     $('#id_subject').val(data['subject']);
-                    $('.vLargeTextField').redactor('code.set', data['html_message']);
+                    tinyMCE.get('id_html_message').setContent(data['html_message'], {format: 'html'});
                     template_selected_handler(true);
                 });
             }
             else {
-                $('#id_subject').val('');
-                $('.vLargeTextField').redactor('code.set', '');
                 template_selected_handler(false);
+                $('#id_subject').val('');
+                tinyMCE.get('id_html_message').setContent('', {format: 'html'});
             }
         });
         $(document).on("keydown", function (e) {
@@ -128,25 +131,50 @@
             }
         });
         function template_selected_handler(selected) {
+            var editor = tinymce.get('id_html_message');
             if (selected) {
                 $('#id_subject').attr('disabled', 'disabled');
-                $('.redactor-editor').attr('contenteditable', 'false');
+                editor.getBody().setAttribute('contenteditable', false)
+                Object.keys(editor.controlManager.controls).forEach(function(btn) {
+                    editor.controlManager.get(btn).setDisabled(true);
+                })
+                $(editor.getBody()).delegate('*', 'click', disable_event);
             }
             else {
                 $('#id_subject').removeAttr('disabled');
-                $('.redactor-editor').attr('contenteditable', 'true');
+                editor.getBody().setAttribute('contenteditable', true)
+                Object.keys(editor.controlManager.controls).forEach(function(btn) {
+                    editor.controlManager.get(btn).setDisabled(false);
+                })
+                $(editor.getBody()).undelegate('*', 'click', disable_event);
             }
         }
-        function init_redactor() {
-            $('.vLargeTextField').redactor({
-                minHeight: 300
-            });
-            var boxes = $('.redactor-box');
-            for (var i = 0; i < boxes.length; ++i) {
-                $(boxes[i]).parent()[0].getElementsByTagName('label')[0].style.float = "none";
-                $(boxes[i]).parent()[0].getElementsByTagName('label')[0].style.display = "inline";
-            }
 
+        function disable_event(e) {
+            e.preventDefault();
+            return false;
+        }
+
+        function AddRemoveTinyMce(editorId) {
+            if(tinyMCE.get(editorId))
+            {
+                tinyMCE.EditorManager.execCommand('mceFocus', false, editorId);
+                tinyMCE.EditorManager.execCommand('mceRemoveEditor', true, editorId);
+
+            } else {
+                tinymce.EditorManager.execCommand('mceAddEditor', false, editorId);
+            }
+        }
+
+        function init_redactor() {
+             tinymce.init({
+                selector: '#id_html_message',
+                mode: 'none',
+                language: 'ru',
+                width: '100%',
+                height: '300px',
+                plugins: 'fullpage',
+              });
         }
         init_redactor();
     </script>
@@ -157,7 +185,6 @@
     <link rel="stylesheet" type="text/css" href="{% static 'admin/css/widgets.css' %}"/>
     <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}"/>
     {{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static "js/redactor/redactor/redactor.css" %}" />
     <style>
     div.form-row {
         position: relative;
