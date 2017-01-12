@@ -46,16 +46,21 @@
     <script type="text/javascript" src="{% static "tiny_mce/tiny_mce.js" %}"></script>
     <script type="text/javascript">
         $ = jQuery.noConflict();
+        var current_emails_file;
         $(document).on('submit', '#massNewsForm', function (e) {
             e.preventDefault();
             AddRemoveTinyMce('id_html_message');
             $('#id_subject').removeAttr('disabled');
             $('#submitForm').button('loading');
+            var formData = new FormData(this);
+            formData.append('_check_users_count', '1');
+            current_emails_file = $('#id_emails');
             $.ajax({
                 url: $(this).attr('action'),
                 type: $(this).attr('method'),
-                dataType: 'json',
-                data: $(this).serialize() + "&_check_users_count=1",
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function (data) {
                     if (data['form']) {
                         $('#massNewsForm').replaceWith(data['form']);
@@ -63,9 +68,11 @@
                         SelectFilter.init("id_course_filter", "Курсы", 0, "/static/admin/");
                         SelectFilter.init("id_university_filter", "Вузы", 0, "/static/admin/");
                         DateTimeShortcuts.init();
+                        $('#id_emails').replaceWith(current_emails_file);
                     }
                     if (!data['valid']) {
                         $('body').animate({scrollTop: $('.form-row.errors').first().position().top - $('.global-header').height()});
+                        $('#id_emails').replaceWith(current_emails_file);
                         return;
                     }
                     var msg = data['message'];
@@ -91,11 +98,13 @@
             if (disabled)
                 $('#id_subject').removeAttr('disabled');
             var form = $('#massNewsForm');
+            var formData = new FormData(form[0]);
             $.ajax({
                 url: $(form).attr('action'),
                 type: $(form).attr('method'),
-                dataType: 'json',
-                data: $(form).serialize(),
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function (data) {
                     $('#modalDialog').modal('hide');
                     alert("{% blocktrans %}Сообщения успешно отправлены{% endblocktrans %}");
