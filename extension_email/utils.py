@@ -18,6 +18,8 @@ def filter_users(support_email):
         return len(data['got_certificate'])
 
     data = support_email.target
+    if data.get('emails'):
+        return User.objects.filter(email__in=data['emails']), ''
     if data.get('to_myself'):
         return User.objects.filter(username=support_email.sender.username), 'to_myself'
     dic = {'bulk_email_optout__isnull': True}
