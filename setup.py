@@ -7,7 +7,5 @@ setup(
     description='PLP extension email',
     url='http://example.com',
     author='author',
-    dependency_links=['https://github.com/npoed/npoed-massmail/tarball/master#egg=npoed_massmail-0.1'],
-    install_requires=["npoed_massmail"],
 )
 
