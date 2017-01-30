@@ -32,6 +32,11 @@ class FromSupportView(CreateView):
             return super(FromSupportView, self).dispatch(request, *args, **kwargs)
         raise Http404
 
+    def get_template_names(self):
+        if getattr(settings, 'EXTENSION_EMAIL_OPENEDU_TEMPLATE', True):
+            return [self.template_name]
+        return ['extension_email/main_miptx.html']
+
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.sender = self.request.user
