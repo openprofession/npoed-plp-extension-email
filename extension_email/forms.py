@@ -7,6 +7,7 @@ from django.db.models.fields import BooleanField
 from django.contrib.admin.widgets import FilteredSelectMultiple, AdminDateWidget
 from django.template import Template, Context
 from django.utils import timezone
+from django.utils.six import text_type
 from django.utils.translation import ugettext_lazy as _
 from plp.models import CourseSession, Course, University
 from .models import SupportEmail, SupportEmailTemplate
@@ -63,6 +64,11 @@ class BulkEmailForm(forms.ModelForm):
         required=False,
         label=_(u'Выберите шаблон или напишите письмо'),
         help_text=_(u'Имейте в виду, что вы не сможете редактировать выбранный шаблон')
+    )
+    emails = forms.FileField(
+        required=False,
+        label=_(u'Список емейлов'),
+        help_text=_(u'Рассылка по списку игнорируя фильтры. Каждый адрес с новой строки.')
     )
     session_filter = forms.ModelMultipleChoiceField(
         queryset=CustomUnicodeCourseSession.get_ordered_queryset(),
@@ -138,6 +144,16 @@ class BulkEmailForm(forms.ModelForm):
             else:
                 result[k] = v
         return result
+
+    def clean_emails(self):
+        val = self.cleaned_data.get('emails')
+        if val:
+            result = [i.strip() for i in val.readlines() if i.strip()]
+            try:
+                text_type(result[0])
+            except (UnicodeDecodeError, IndexError):
+                raise forms.ValidationError(_(u'Файл не содержит данных или некорректен'))
+            return result
 
     def clean_html_message(self):
         """
